@@ -1,0 +1,199 @@
+Fraction   | int    (div int)*
+Number     | [int,float,const,A_Expr]
+A_Unary    | [sub]  (Number)* 
+A_Exp      | Unary  (  [exp]   Unary)*>
+A_Term     | Exp    ([mul|div]   Exp)*<
+A_Expr     | Term   ([add|sub]  Term)*< 
+
+Factor     | [number,var,Expr]
+Unary      | [sub|trig|log] ([Factor)*<
+Exp        | Unary  (  [exp]   Unary)*<
+Term       | Exp    ([mul|div]   Exp)*>
+Expr       | Term   ([add|sub]  Term)*>
+
+* = 0 or more op (ie (l op r) || r)
+> or < = left or right associative 
+
+Function Class
+ADD|SUB|MUL|DIV|EXP => N-ary (associativity is given)
+NEG|TRIG|LOG|LN => Unary
+3x^2 - 7x + 5
+              -
+          +       term
+      -      term
+term    term
+
+              *
+          /       exp
+      *      exp
+exp    exp
+
+
+ALL VISIT FUNCTIONS: ### DERIVATIVE ###
+(Num = INT, FLOAT, CONST)
+   ˍˍˍˍˍˍˍˍˍˍˍˍˍˍˍ                                               ˍˍˍˍˍˍˍˍˍˍˍˍˍˍ
++--+ NUMBER-NODE +--------------------------------------------+--+  SIMPLIFY  +----------------
+|  ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯                                            |  ¯¯¯¯¯¯¯¯¯¯¯¯¯¯ 
+|  INT,FLOAT,CONST                                            | SIMPLIFIED
+|  { d/dx(k) = 0 }                                            | 
+|  VAR                                                        | SIMPLIFIED
+|  { d/dx(x) = 1 }                                            | 
+|  +-------------+                                            | 
++--+ UNARY-NODES +--------------------------------------------+
+|  +-------------+                                            | 
+|  Neg            => (SUB Expr)                               | 
+|  { d/dx(-f(x)) = -f'(x)}                                    | 
+|                                                             | 
+|                                                             | 
+|  Sin            => (SIN Expr)                               | 
+|  { d/dx(sin(f(x))) = cos(f(x)) * f'(x)}                     | 
+|                                                             | 
+|                                                             | 
+|  COS            => (COS Expr)                               | 
+|  { d/dx(cos(f(x))) = -sin(f(x)) * f'(x)}                    | 
+|                                                             | 
+|  TAN            => (TAN Expr)                               | 
+|  { d/dx(tan(f(x))) = sec(f(x))^2 * f'(x)}                   | 
+|                                                             | 
+|  CSC            => (CSC Expr)                               | 
+|  { d/dx(csc(f(x))) = -csc(f(x))cot(f(x)) * f'(x)}           | 
+|                                                             | 
+|  SEC            => (SEC Expr)                               | 
+|  { d/dx(sec(f(x))) = sec(f(x))tan(f(x)) * f'(x)}            | 
+|                                                             | 
+|  COT            => (COT Expr)                               | 
+|  { d/dx(cot(f(x))) = csc(f(x))^2 * f'(x)}                   | 
+|                                                             | 
+|  LN             => (LN  Expr)                               | 
+|  { d/dx(ln(f(x))) = 1/f(x) * f(x)}                          | 
+|                                                             | 
+|  LOG            => (LOG Expr)                               | 
+|  { d/dx(log(f(x))) = 1/f(x)ln(a) * f(x)}                    | 
+|  +--------------+                                           | 
++--+ BINARY-NODES +-------------------------------------------+---------------
+|  +--------------+                                           | 
+|  Sum            => (Expr ADD  Expr)                         | 
+|  { d/dx(f(x) + g(x)) = f'(x) + g'(x) }                      | 
+|-----                                                        | 
+|  Difference     => (Expr SUB  Expr)                         | 
+|  { d/dx(f(x) - g(x)) = f'(x) - g'(x) }                      | 
+|-----                                                        | 
+|  Constant Mul   => (Num  MUL  Expr)                         | 
+|  { d/dx(k * f(x)) = k * f'(x) }                             | 
+|  Product        => (Expr MUL  Expr)                         | 
+|  { d/dx(f(x) * g(x)) = f(x)g'(x) + g(x)f'(x) }              | 
+|-----                                                        | 
+|  Quotient       => (Expr DIV  Expr)                         | 
+|  { d/dx(f(x) / g(x)) = g(x)f'(x) - f(x)g'(x) / g(x)^2}      | 
+|-----                                                        | 
+|  Power          => (var  EXP  Num )                         | 
+|  { d/dx(x^n) = nx^(n-1)}                                    | 
+|  General Power  => (Expr EXP  Num )                         | 
+|  { d/dx((f(x))^n) = n(f(x))^(n-1) * f'(x) }                 | 
+|  Natural Exp    => (e    EXP  Expr)                         | 
+|  { d/dx(e^f(x)) = e^f(x) * f'(x)}                           | 
+|  General Exp    => (Num  EXP  Expr)                         | 
+|  { d/dx(n^f(x)) = (n^f(x))ln(n) * f'(x)}                    | 
+|  Power log      => (Expr EXP  Expr)                         | 
+|  { d/dx(f(x)^g(x)) = e^f(x)ln(g(x)) * d/dx(f(x)ln(g(x)))}   | 
++-------------------------------------------------------------+
+__________
+INSIGHT:
+EXPR [op] EXPR is all you need to solve d/dx of equations with [op]
+(ie. it is the general formula for such [op])
+(it also includes all variations of the chain rule)
+TERMS (ie. MUL) have a degree which is the exponent of the EXP term
+visit function only visits once, meaning we need to implement mostly the same functions for EACH CASE, which can make the code LONG  
+(ie we really need a simplify method)
+__________
+simplify() method
+Polynomials:
+Like Terms   => for all (terms in the expression have equal degree(n in ax^n))
+{ add all their coefficients and output a new term }
+
+Laws of Exponent:
+Product  =>  foreach(Term in Expr) if(a^n MUL a^m)
+{ new f(x) where base = a & exp = n+m }
+Quotient =>  foreach(Term in Expr) if(a^n DIV a^m)
+{ new f(x) where base = a & exp = n-m }
+PowofPow =>  foreach(Exp  in Term) if((a EXP m) exp n)
+{ new f(x) where base = a & exp = n*m }
+PowofMul =>  foreach(Term in Expr) if((a MUL b) exp m)
+{ new f(x) where a^m MUL b^m }
+PowofDiv =>  foreach(Term in Expr) if((a DIV b) exp m)
+{ new f(x) where a^m DIV b^m }
+Zero     =>  foreach(Term in Expr) if(a EXP 0)
+{ new f(x) where 1 }
+Negative =>  foreach(Term in Expr) if(a EXP (SUB m))
+{ new f(x) where 1 DIV a^m }
+Fraction =>  foreach(Term in Expr) if(a EXP (m DIV n))
+{ new f(x) where a^m MUL b^m }
+
+3 + 3x^2 + 4 + 4x^2
+3x^2
+0x^0 X
+3
+0    /
+if ADD or SUB
+if leftnode or rightnode tokentype is num
+  return 0
+else
+  derivative(leftnode) +|- derivative(rightnode)
+
+ConstantMul Rule includes:
+Num * Num
+Num * var 
+var * Num
+Num * Expr
+Expr * Num
+
+Expr * Expr
+(3 + 5)(4 + 5)
+(3 - 5)(4 - 5)
+(3x)(2x)
+(3/x)(2/x)
+(x^2)(x^2)
+(3x^2)(2x^2)
+(3/x + 4/x)(5/x + 6/x)
+(3x^2 + 4x^2)(3x^2)
+
+
+Chain                   => (Expr [op] Num) or (Num [op] Expr)
+
+ex:
+sin(3x^2)/2 + 2x^2 - 3.5log(x)
+                        -
+            +                       *
+       /           *           3.5     log
+  sin     2     2     ^                 x
+   *                x   2
+ 3   ^
+   x   2
+|-----------| |-----------|
+    term           term
+
+-5 - 5
+    -
+-       5
+5
+
+-(5-5)
+  -
+  -
+5   5
+
+-sin(log5(5))
+-
+sin
+log
+5
+
+2/x^e^2
+    /
+2       ^
+    x       ^
+        e       2
+
+(3x + 5)(2x - 2)
+(expr())(expr())
+

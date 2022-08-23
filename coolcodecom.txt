@@ -1,0 +1,74 @@
+if (!new List<string>(){"NUM","VAR","CONST"}.Contains(currenttoken.type)) //OP TOKEN TYPE | op (Factor)
+{
+    var op = currenttoken;
+    var rightnode = factor();
+    return new Node(op, rightnode);
+}
+else //[num,var,const] TOKEN TYPE | Factor
+{
+    var rightnode = factor();
+    return rightnode;
+} 
+
+    /* 
+    check if its a factor 
+    { 
+        if token.type is NUM,VAR,CONST
+        { 
+            return node 
+            move to next (token is OP TokenType)
+        }
+        else //its now OP TYPE
+        { 
+            move to next 
+            return node (token is NUM VAR CONST TokenType)
+        }
+    }
+    check if its a unary
+    {
+        token op = curtoken
+        if token.type is SUB,TRIG,LOG
+        {
+            move to next
+            return Unaryop(op,curtoken)
+        }
+    }
+    check if its a term
+    {
+        left = factor()
+        while token.type is MUL,DIV,EXP
+        {
+            op = token
+            move to next
+            right = factor()
+            left =  binaryop(left op right)
+        }
+        else //its now not MUL,DIV,EXP
+        {
+            
+        }
+    }
+    check if its an expr
+    */
+    /* 
+    public BinaryOp parse()
+    {
+        while (currenttoken != new Token())
+        {
+            if (true)
+            {
+            
+            } 
+            
+        }
+    } */
+
+    if (new List<string>(){"INT","FLOAT"}.Contains(leftfunc.token.type))
+            { return new Function(func("0")       , "SUB" , visit(rightfunc)); }
+            else if (new List<string>(){"INT","FLOAT"}.Contains(rightfunc.token.type))
+            { return new Function(visit(leftfunc) , "SUB" , func("0")); }
+            else if (leftfunc.token.type == "VAR")
+            { return new Function(func("1")       , "SUB" , visit(rightfunc)); }
+            else if (rightfunc.token.type == "VAR")
+            { return new Function(visit(leftfunc) , "SUB" , func("1")); }
+            else
